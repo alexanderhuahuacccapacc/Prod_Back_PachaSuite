@@ -20,30 +20,27 @@ import java.util.Map;
 @SecurityRequirement(name = "bearerAuth")
 public class HabitacionImagenController {
 
-    private final HabitacionService       habitacionService;
-    private final SupabaseStorageService  storageService;
+    private final HabitacionService      habitacionService;
+    private final SupabaseStorageService storageService;
 
-    @PostMapping(value = "/{id}/imagenes", consumes = "multipart/form-data")
+    @PostMapping(consumes = "multipart/form-data")   // ← sin value
     @Operation(summary = "Subir imagen a una habitación")
     public ResponseEntity<Map<String, Object>> subir(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file) throws Exception {
 
-        // validar tipo de archivo
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Solo se permiten imágenes"));
         }
-
-        // validar tamaño máximo 5MB
         if (file.getSize() > 15 * 1024 * 1024) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "La imagen no puede superar 5MB"));
+                    .body(Map.of("error", "La imagen no puede superar 15MB"));
         }
 
-        String numero = habitacionService.findById(id).getNumero();
-        String url    = storageService.subirImagen(file, numero);
+        String numero   = habitacionService.findById(id).getNumero();
+        String url      = storageService.subirImagen(file, numero);
         String[] nuevas = habitacionService.agregarImagen(id, url);
 
         return ResponseEntity.ok(Map.of(
@@ -53,7 +50,7 @@ public class HabitacionImagenController {
         ));
     }
 
-    @DeleteMapping("/{id}/imagenes")
+    @DeleteMapping   // ← sin path
     @Operation(summary = "Eliminar imagen de una habitación")
     public ResponseEntity<Map<String, Object>> eliminar(
             @PathVariable Long id,
