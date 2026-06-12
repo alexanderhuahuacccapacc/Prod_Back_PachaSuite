@@ -3,6 +3,7 @@ package com.pachasuite.api.controller;
 import com.pachasuite.api.dto.HabitacionDTO;
 import com.pachasuite.api.dto.HabitacionUpdateDTO;
 import com.pachasuite.api.service.HabitacionService;
+import com.pachasuite.api.service.SupabaseStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
