@@ -24,6 +24,7 @@ import java.util.Map;
 public class AdminHabitacionController {
 
     private final HabitacionService habitacionService;
+    private final SupabaseStorageService storageService;
 
     @GetMapping
     @Operation(summary = "Listar todas las habitaciones")
@@ -52,5 +53,51 @@ public class AdminHabitacionController {
             @PathVariable Long id,
             @RequestBody Map<String, Boolean> amenidades) {
         return ResponseEntity.ok(habitacionService.updateAmenidades(id, amenidades));
+    }
+
+
+    @PostMapping(consumes = "multipart/form-data")
+    @Operation(summary = "Subir imagen a una habitación")
+    public ResponseEntity<Map<String, Object>> subir(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) throws Exception {
+
+        // validar tipo de archivo
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Solo se permiten imágenes"));
+        }
+
+        // validar tamaño máximo 5MB
+        if (file.getSize() > 5 * 1024 * 1024) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "La imagen no puede superar 5MB"));
+        }
+
+        String numero = habitacionService.findById(id).getNumero();
+        String url    = storageService.subirImagen(file, numero);
+        String[] nuevas = habitacionService.agregarImagen(id, url);
+
+        return ResponseEntity.ok(Map.of(
+                "url",      url,
+                "imagenes", nuevas,
+                "total",    nuevas.length
+        ));
+    }
+
+    @DeleteMapping
+    @Operation(summary = "Eliminar imagen de una habitación")
+    public ResponseEntity<Map<String, Object>> eliminar(
+            @PathVariable Long id,
+            @RequestParam("url") String url) throws Exception {
+
+        storageService.eliminarImagen(url);
+        String[] restantes = habitacionService.eliminarImagen(id, url);
+
+        return ResponseEntity.ok(Map.of(
+                "imagenes", restantes,
+                "total",    restantes.length
+        ));
     }
 }
