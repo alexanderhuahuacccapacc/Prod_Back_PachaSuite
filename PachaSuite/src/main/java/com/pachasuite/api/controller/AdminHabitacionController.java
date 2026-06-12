@@ -72,7 +72,7 @@ public class AdminHabitacionController {
         }
 
         // validar tamaño máximo 5MB
-        if (file.getSize() > 5 * 1024 * 1024) {
+        if (file.getSize() > 10 * 1024 * 1024) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "La imagen no puede superar 5MB"));
         }
