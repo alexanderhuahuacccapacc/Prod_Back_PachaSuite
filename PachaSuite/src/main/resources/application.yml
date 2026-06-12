@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: PachaSuite
+  profiles:
+    active: dev
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 86400000  # 24 horas en ms
+  cors:
+    allowed-origins: "http://localhost:4200"

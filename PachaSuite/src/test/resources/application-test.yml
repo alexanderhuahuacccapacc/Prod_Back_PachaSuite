@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;NON_KEYWORDS=VALUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false   # Schema lo crea Hibernate en tests
+
+app:
+  jwt:
+    secret: TestSecretKeyForJWTPachaSuiteUnitTests2024VeryLong!
+    expiration: 3600000
+  cors:
+    allowed-origins: "http://localhost:4200"
+
+logging:
+  level:
+    com.pachasuite: WARN

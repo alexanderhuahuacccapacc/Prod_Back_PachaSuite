@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Código de verificación – Pacha Suite</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: #f5f0eb;
+      color: #1F1611;
+      padding: 32px 16px;
+    }
+    .wrapper {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #1F1611 0%, #5C3A21 100%);
+      border-radius: 16px 16px 0 0;
+      padding: 36px 40px 28px;
+      text-align: center;
+    }
+    .header-icon {
+      width: 56px;
+      height: 56px;
+      background: rgba(194,65,12,0.25);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 24px;
+    }
+    .header h1 {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .header p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    /* Body */
+    .body {
+      background: #ffffff;
+      padding: 36px 40px;
+    }
+    .greeting {
+      font-size: 15px;
+      color: #5C3A21;
+      margin-bottom: 8px;
+    }
+    .message {
+      font-size: 15px;
+      color: #4a3728;
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+    /* Code box */
+    .code-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #8b6a52;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .code-box {
+      background: linear-gradient(135deg, #fdf6f0 0%, #faf0e6 100%);
+      border: 2px solid #C2410C;
+      border-radius: 14px;
+      padding: 24px 20px;
+      text-align: center;
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .code-box::before {
+      content: '';
+      position: absolute;
+      top: -20px; right: -20px;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: rgba(194,65,12,0.06);
+    }
+    .code-digits {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 44px;
+      font-weight: 900;
+      letter-spacing: 10px;
+      color: #C2410C;
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+    .code-expiry {
+      font-size: 12px;
+      color: #9a7a65;
+      margin-top: 8px;
+      display: block;
+    }
+    /* Info row */
+    .info-row {
+      display: flex;
+      gap: 12px;
+      background: #faf7f2;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 28px;
+      align-items: flex-start;
+    }
+    .info-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .info-text {
+      font-size: 13px;
+      color: #6b5a4e;
+      line-height: 1.5;
+    }
+    .info-text strong { color: #1F1611; }
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid #ede5dc;
+      margin: 0 0 24px;
+    }
+    .steps-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b6a52;
+      margin-bottom: 14px;
+    }
+    .steps {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .steps li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #4a3728;
+    }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #C2410C;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    /* Footer */
+    .footer {
+      background: #f0ebe2;
+      border-radius: 0 0 16px 16px;
+      padding: 20px 40px;
+      text-align: center;
+    }
+    .footer p {
+      font-size: 12px;
+      color: #8b7a6a;
+      line-height: 1.6;
+    }
+    .footer a {
+      color: #C2410C;
+      text-decoration: none;
+    }
+    .footer .hotel-info {
+      font-size: 11px;
+      color: #b09a88;
+      margin-top: 8px;
+    }
+    /* Security warning */
+    .security-note {
+      background: rgba(194,65,12,0.06);
+      border-left: 3px solid #C2410C;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 14px;
+      margin-top: 20px;
+      font-size: 12px;
+      color: #7a4a30;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-icon">🏔️</div>
+      <h1>Pacha Suite</h1>
+      <p>Hotel Boutique · Juliaca, Puno</p>
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+      <p class="greeting">Hola, <strong th:text="${nombreDestinatario}">Huésped</strong> 👋</p>
+      <p class="message">
+        Recibimos tu solicitud de reserva. Para confirmar tu identidad y proceder,
+        ingresa el siguiente código de verificación en el sitio web:
+      </p>
+
+      <!-- Código -->
+      <p class="code-label">Tu código de verificación</p>
+      <div class="code-box">
+        <span class="code-digits" th:text="${codigo}">000000</span>
+        <span class="code-expiry">
+          ⏱ Válido por <strong th:text="${minutosExpiracion}">10</strong> minutos
+        </span>
+      </div>
+
+      <!-- Info -->
+      <div class="info-row">
+        <span class="info-icon">📋</span>
+        <div class="info-text">
+          Ingresa este código en el campo de verificación del formulario de reserva.
+          Una vez ingresado, tu reserva quedará registrada con el estado
+          <strong>pendiente</strong> hasta que el hotel la confirme.
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Pasos -->
+      <p class="steps-title">¿Qué sigue después?</p>
+      <ul class="steps">
+        <li>
+          <span class="step-num">1</span>
+          Ingresa el código de 6 dígitos en el formulario
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          Tu reserva será registrada con un código único (RES-XXXX)
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          El equipo de Pacha Suite confirmará tu reserva en breve
+        </li>
+        <li>
+          <span class="step-num">4</span>
+          Preséntate en recepción el día de tu check-in con tu código
+        </li>
+      </ul>
+
+      <!-- Nota de seguridad -->
+      <div class="security-note">
+        🔒 <strong>¿No solicitaste este código?</strong>
+        Si no estás realizando una reserva en Pacha Suite, ignora este email.
+        Nunca compartiremos tu información personal.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>
+        ¿Tienes preguntas? Contáctanos en
+        <a href="mailto:reservas@pachasuite.com">reservas@pachasuite.com</a>
+        o llámanos al <strong>+51 900 000 000</strong>
+      </p>
+      <p class="hotel-info">
+        Pacha Suite Hotel Boutique · Jr. Progreso 123, Juliaca, Puno, Perú<br>
+        © <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2026</span>
+        Pacha Suite · Todos los derechos reservados
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
