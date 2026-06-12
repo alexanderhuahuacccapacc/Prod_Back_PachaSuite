@@ -58,7 +58,7 @@ public class AdminHabitacionController {
     }
 
 
-    @PostMapping(consumes = "multipart/form-data")
+    @PostMapping(value = "/{id}/imagenes", consumes = "multipart/form-data")
     @Operation(summary = "Subir imagen a una habitación")
     public ResponseEntity<Map<String, Object>> subir(
             @PathVariable Long id,
@@ -88,7 +88,7 @@ public class AdminHabitacionController {
         ));
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}/imagenes")
     @Operation(summary = "Eliminar imagen de una habitación")
     public ResponseEntity<Map<String, Object>> eliminar(
             @PathVariable Long id,
