@@ -27,7 +27,7 @@ public class RateLimitFilter implements Filter {
     private static final long PUBLIC_WINDOW_MS = 60000;
 
     private static final int MAX_VERIFY_ATTEMPTS = 5;
-    private static final long VERIFY_WINDOW_MS = 3600000;
+    private static final long VERIFY_WINDOW_MS = 12000;
 
     private final Cache<String, RateLimitInfo> requestCounts = Caffeine.newBuilder()
             .expireAfterAccess(1, TimeUnit.HOURS)
