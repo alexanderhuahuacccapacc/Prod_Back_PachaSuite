@@ -51,7 +51,7 @@ logging:
     root: WARN
 
 recaptcha:
-  secret-key: ${RECAPTCHA_SECRET_KEY:DESACTIVADO}
+  secret-key: ${RECAPTCHA_SECRET_KEY}
 
 rate:
   limit:
