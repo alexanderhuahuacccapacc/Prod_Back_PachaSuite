@@ -73,7 +73,7 @@ public class SecurityConfig {
                                 .preload(true)
                         )
                         .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'  http://localhost8080")
+                                .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'  http://localhost:8080")
                         )
                         .xssProtection(customizer -> {})
                         .referrerPolicy(referrer -> referrer

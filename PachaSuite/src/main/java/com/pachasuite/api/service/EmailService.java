@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -125,6 +126,21 @@ public class EmailService {
         } catch (MessagingException | MailException | java.io.UnsupportedEncodingException e) {
             log.error("Error enviando respuesta de contacto: {}", e.getMessage());
             return false;
+        }
+    }
+    public void enviarReservaPdf(String destinatario, String codigo,
+                                 byte[] pdf) {
+        MimeMessage message = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(destinatario);
+            helper.setSubject("Tu reserva " + codigo + " — Pacha Suite");
+            helper.setText("Adjuntamos el comprobante de tu reserva <b>" + codigo + "</b>.",true);
+            helper.addAttachment("reserva-" + codigo + ".pdf",
+                    new ByteArrayResource(pdf), "application/pdf");
+            mailSender.send(message);
+        } catch (Exception e) {
+            throw new RuntimeException("Error enviando PDF", e);
         }
     }
 }

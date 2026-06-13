@@ -44,6 +44,8 @@ app:
     from-name: Pacha Suite Hotel
     expiracion-minutos: 10
     destinatario-contacto: ${MAIL_USERNAME}
+  cors:
+    allowed-origins: "https://prod-front-pachasuite.onrender.com,http://localhost:4200"
 
 logging:
   level:

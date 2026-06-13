@@ -13,4 +13,5 @@ app:
     secret: ${JWT_SECRET}
     expiration: 86400000  # 24 horas en ms
   cors:
-    allowed-origins: "https://prod-front-pachasuite.onrender.com"
+    cors:
+      allowed-origins: "https://prod-front-pachasuite.onrender.com,http://localhost:4200"
