@@ -7,10 +7,10 @@ import com.pachasuite.api.dto.RegisterDTO;
 import com.pachasuite.api.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +24,9 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
 
     @PostMapping("/register")
     @Operation(summary = "Registrar nuevo usuario")
@@ -49,25 +52,25 @@ public class AuthController {
         try {
             JwtDTO jwtDTO = authService.login(request);
 
-            // Crear cookie HttpOnly con el token
-            Cookie cookie = new Cookie("jwt", jwtDTO.getToken());
-            cookie.setHttpOnly(true);
-            cookie.setSecure(false);   // ← false en dev, true en prod
-            cookie.setPath("/");
-            cookie.setMaxAge(86400);   // 24 horas
-            response.addCookie(cookie);
+            String sameSite = cookieSecure ? "None" : "Lax";
+            String secure   = cookieSecure ? "; Secure" : "";
 
-            // Devolver solo info del usuario, sin el token
+            response.setHeader("Set-Cookie",
+                    "jwt=" + jwtDTO.getToken() +
+                            "; Path=/; HttpOnly" + secure +
+                            "; SameSite=" + sameSite +
+                            "; Max-Age=86400");
+
             return ResponseEntity.ok(Map.of(
-                    "email", request.getEmail(),
-                    "rol",   jwtDTO.getRol() != null ? jwtDTO.getRol() : "",
+                    "email",   request.getEmail(),
+                    "rol",     jwtDTO.getRol() != null ? jwtDTO.getRol() : "",
                     "message", "Login exitoso"
             ));
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", e.getMessage(),
-                    "code", "INVALID_CREDENTIALS"
+                    "code",  "INVALID_CREDENTIALS"
             ));
         }
     }
@@ -75,12 +78,14 @@ public class AuthController {
     @PostMapping("/logout")
     @Operation(summary = "Cerrar sesión")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        Cookie cookie = new Cookie("jwt", "");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);  // ← false en dev
-        cookie.setPath("/");
-        cookie.setMaxAge(0);      // expira inmediatamente
-        response.addCookie(cookie);
+        String sameSite = cookieSecure ? "None" : "Lax";
+        String secure   = cookieSecure ? "; Secure" : "";
+
+        response.setHeader("Set-Cookie",
+                "jwt=; Path=/; HttpOnly" + secure +
+                        "; SameSite=" + sameSite +
+                        "; Max-Age=0");
+
         return ResponseEntity.ok(Map.of("message", "Logout exitoso"));
     }
 }
