@@ -2,6 +2,7 @@ package com.pachasuite.api.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -53,7 +53,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
 
                 if (jwtProvider.isPreAuthToken(token)) {
-                    log.warn("⚠️ SESSION FIXATION: Token pre-autenticación rechazado");
+                    log.warn("SESSION FIXATION: Token pre-autenticación rechazado");
                     sendErrorResponse(response, 401,
                             "Token de sesión inválido - Inicie sesión nuevamente",
                             "SESSION_FIXATION");
@@ -74,10 +74,9 @@ public class JwtFilter extends OncePerRequestFilter {
                         UsernamePasswordAuthenticationToken auth =
                                 new UsernamePasswordAuthenticationToken(
                                         userDetails, null, userDetails.getAuthorities());
-
                         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(auth);
-                        log.debug("Usuario autenticado correctamente: {}", email);
+                        log.debug("Usuario autenticado: {}", email);
                     } else {
                         log.warn("Token inválido para usuario: {}", email);
                         sendErrorResponse(response, 401, "Token inválido para este usuario", "INVALID_USER");
@@ -96,28 +95,34 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     private String extractToken(HttpServletRequest request) {
+        // 1. Primero busca en cookie HttpOnly (seguro)
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("jwt".equals(cookie.getName())) {
+                    log.debug("Token extraído desde cookie");
+                    return cookie.getValue();
+                }
+            }
+        }
+        // 2. Fallback: header Authorization (para Postman)
         String header = request.getHeader("Authorization");
         if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
+            log.debug("Token extraído desde header Authorization");
             return header.substring(7);
         }
         return null;
     }
+
     private boolean isValidTokenFormat(String token) {
-        if (token == null || token.trim().isEmpty()) {
-            return false;
-        }
+        if (token == null || token.trim().isEmpty()) return false;
         String[] parts = token.split("\\.");
-        if (parts.length != 3) {
-            return false;
-        }
-        if (token.equalsIgnoreCase("null") || token.equalsIgnoreCase("undefined")) {
-            return false;
-        }
+        if (parts.length != 3) return false;
+        if (token.equalsIgnoreCase("null") || token.equalsIgnoreCase("undefined")) return false;
         return true;
     }
 
-    private void sendErrorResponse(HttpServletResponse response, int status, String message, String code)
-            throws IOException {
+    private void sendErrorResponse(HttpServletResponse response, int status,
+                                   String message, String code) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json");
         response.getWriter().write(String.format(
