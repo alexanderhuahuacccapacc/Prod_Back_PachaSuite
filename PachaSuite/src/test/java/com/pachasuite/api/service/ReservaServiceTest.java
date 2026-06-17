@@ -1,8 +1,9 @@
 package com.pachasuite.api.service;
 
-import com.pachasuite.api.dto.HuespedDTO;
+
 import com.pachasuite.api.dto.ReservaRequestDTO;
 import com.pachasuite.api.dto.ReservaResponseDTO;
+import com.pachasuite.api.dto.TitularDTO;
 import com.pachasuite.api.entities.*;
 import com.pachasuite.api.exception.BadRequestException;
 import com.pachasuite.api.repository.ExtraRepository;
@@ -242,15 +243,17 @@ class ReservaServiceTest {
         req.setAdultos(1);
         req.setNinos(0);
         req.setHabitacionId(1L);
-        req.setEmailTitular("huesped@test.com");
         req.setCodigoVerificacion("123456");
         req.setExtrasCodigos(extras);
 
-        HuespedDTO huesped = new HuespedDTO();
-        huesped.setNombre("Juan");
-        huesped.setApellido("Quispe");
-        huesped.setTipo("titular");
-        req.setHuespedes(List.of(huesped));
+        TitularDTO titular = new TitularDTO();
+        titular.setNombre("Juan");
+        titular.setApellido("Quispe");
+        titular.setEmail("huesped@test.com");
+        titular.setDocumentoTipo("DNI");
+        titular.setDocumento("12345678");
+        titular.setEdad(25);
+        req.setTitular(titular);
 
         return req;
     }

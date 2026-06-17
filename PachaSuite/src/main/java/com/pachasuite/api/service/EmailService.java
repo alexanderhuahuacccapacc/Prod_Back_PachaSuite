@@ -128,14 +128,14 @@ public class EmailService {
             return false;
         }
     }
-    public void enviarReservaPdf(String destinatario, String codigo,
-                                 byte[] pdf) {
+    public void enviarReservaPdf(String destinatario, String codigo, byte[] pdf) {
         MimeMessage message = mailSender.createMimeMessage();
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromAddress, fromName);   // ✅ esta línea faltaba
             helper.setTo(destinatario);
             helper.setSubject("Tu reserva " + codigo + " — Pacha Suite");
-            helper.setText("Adjuntamos el comprobante de tu reserva <b>" + codigo + "</b>.",true);
+            helper.setText("Adjuntamos el comprobante de tu reserva <b>" + codigo + "</b>.", true);
             helper.addAttachment("reserva-" + codigo + ".pdf",
                     new ByteArrayResource(pdf), "application/pdf");
             mailSender.send(message);
