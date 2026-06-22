@@ -1,6 +1,7 @@
 package com.pachasuite.api.service;
 
 import lombok.extern.slf4j.Slf4j;
+import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -11,12 +12,16 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.core5.util.Timeout;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.UUID;
 
 @Service
 @Slf4j
 public class SupabaseStorageService {
+
+    private static final int   MAX_WIDTH = 1600;
+    private static final float QUALITY   = 0.80f;
 
     @Value("${supabase.url}")
     private String supabaseUrl;
@@ -38,30 +43,39 @@ public class SupabaseStorageService {
     }
 
     public String subirImagen(MultipartFile file, String habitacionNumero) throws IOException {
-        // nombre único para evitar colisiones
-        String extension = obtenerExtension(file.getOriginalFilename());
-        String fileName  = habitacionNumero + "/" + UUID.randomUUID() + "." + extension;
+        // 1. Optimizar antes de subir (resize + compresión)
+        byte[] imagenOptimizada = optimizarImagen(file);
+
+        // 2. Nombre único — siempre .jpg porque forzamos ese formato al optimizar
+        String fileName  = habitacionNumero + "/" + UUID.randomUUID() + ".jpg";
         String uploadUrl = supabaseUrl + "/storage/v1/object/" + bucket + "/" + fileName;
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + serviceKey);
         headers.set("x-upsert", "true");
-        headers.setContentType(MediaType.parseMediaType(
-                file.getContentType() != null ? file.getContentType() : "image/jpeg"));
-
-        HttpEntity<byte[]> entity = new HttpEntity<>(file.getBytes(), headers);
-
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        HttpEntity<byte[]> entity = new HttpEntity<>(imagenOptimizada, headers);
         RestTemplate rt = buildClient();
         rt.exchange(uploadUrl, HttpMethod.POST, entity, String.class);
 
-        // retornar URL pública
         String publicUrl = supabaseUrl + "/storage/v1/object/public/" + bucket + "/" + fileName;
-        log.info("Imagen subida a Supabase: {}", publicUrl);
+        log.info("Imagen optimizada y subida a Supabase: {} ({} KB -> {} KB)",
+                publicUrl, file.getSize() / 1024, imagenOptimizada.length / 1024);
         return publicUrl;
     }
 
+    private byte[] optimizarImagen(MultipartFile file) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Thumbnails.of(file.getInputStream())
+                .size(MAX_WIDTH, MAX_WIDTH)
+                .outputQuality(QUALITY)
+                .outputFormat("jpg")
+                .toOutputStream(outputStream);
+
+        return outputStream.toByteArray();
+    }
     public void eliminarImagen(String url) {
-        // extraer el path desde la URL pública
         String path = url.replace(
                 supabaseUrl + "/storage/v1/object/public/" + bucket + "/", "");
         String deleteUrl = supabaseUrl + "/storage/v1/object/" + bucket + "/" + path;
@@ -74,10 +88,5 @@ public class SupabaseStorageService {
                 new HttpEntity<>(headers), String.class);
 
         log.info("Imagen eliminada de Supabase: {}", path);
-    }
-
-    private String obtenerExtension(String filename) {
-        if (filename == null || !filename.contains(".")) return "jpg";
-        return filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
     }
 }

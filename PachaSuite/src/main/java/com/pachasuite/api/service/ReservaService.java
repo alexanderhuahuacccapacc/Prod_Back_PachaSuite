@@ -37,7 +37,7 @@ public class ReservaService {
         validarFechas(req.getCheckIn(), req.getCheckOut());
 
         String email = req.getEmailTitular();
-        log.debug("🔍 Validando código para email: {}", email);
+        log.debug(" Validando código para email: {}", email);
 
         CodigoVerificacion cv = codigoService.validar(email, req.getCodigoVerificacion());
 
