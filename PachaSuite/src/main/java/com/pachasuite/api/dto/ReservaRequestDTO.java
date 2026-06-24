@@ -26,12 +26,10 @@ public class ReservaRequestDTO {
     @Min(value = 0)
     private int ninos = 0;
 
-    // ✅ Titular separado - campos completos obligatorios
     @NotNull(message = "Los datos del titular son obligatorios")
     @Valid
     private TitularDTO titular;
 
-    // ✅ Acompañantes - solo nombre, apellido y documento obligatorios
     @Valid
     private List<AcompananteDTO> acompanantes = new ArrayList<>();
 
@@ -41,14 +39,15 @@ public class ReservaRequestDTO {
     @Size(min = 6, max = 6, message = "El código debe tener 6 dígitos")
     private String codigoVerificacion;
 
-    // El email del titular se extrae automáticamente
     public String getEmailTitular() {
         return titular != null ? titular.getEmail() : null;
     }
 
-    // ✅ Compatibilidad con ReservaService.buildHuesped()
-    // Convierte titular + acompañantes en la lista plana que ya usa el servicio
+    private List<HuespedDTO> huespedescache = null;
+
     public List<HuespedDTO> getHuespedes() {
+        if (huespedescache != null) return huespedescache;
+
         List<HuespedDTO> lista = new ArrayList<>();
 
         if (titular != null) {
@@ -87,6 +86,7 @@ public class ReservaRequestDTO {
             }
         }
 
-        return lista;
+        huespedescache = lista;
+        return huespedescache;
     }
 }

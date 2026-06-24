@@ -37,7 +37,7 @@ public class ReservaService {
         validarFechas(req.getCheckIn(), req.getCheckOut());
 
         String email = req.getEmailTitular();
-        log.debug(" Validando código para email: {}", email);
+        log.debug("Validando código para email: {}", email);
 
         CodigoVerificacion cv = codigoService.validar(email, req.getCodigoVerificacion());
 
@@ -65,9 +65,14 @@ public class ReservaService {
                 .subtotal(tot[0]).impuestos(tot[1]).total(tot[2])
                 .origen("WEB").extras(extras).build();
 
-        req.getHuespedes().stream()
-                .map(d -> buildHuesped(d, r))
-                .forEach(r.getHuespedes()::add);
+        // ✅ FIX: construir la lista UNA sola vez antes de persistir
+        // para evitar que cascade + dirty-checking de JPA llame getHuespedes() varias veces
+        List<HuespedDTO> huespedDTOs = req.getHuespedes(); // ya cacheado en el DTO
+        List<Huesped> huespedEntidades = new ArrayList<>();
+        for (HuespedDTO dto : huespedDTOs) {
+            huespedEntidades.add(buildHuesped(dto, r));
+        }
+        r.getHuespedes().addAll(huespedEntidades);
 
         Reserva saved = reservaRepo.save(r);
         hab.setEstado(Habitacion.HabitacionEstado.pendiente);
@@ -102,9 +107,12 @@ public class ReservaService {
                 .subtotal(tot[0]).impuestos(tot[1]).total(tot[2])
                 .origen("ADMIN").extras(extras).build();
 
-        req.getHuespedes().stream()
-                .map(d -> buildHuesped(d, r))
-                .forEach(r.getHuespedes()::add);
+        // ✅ FIX: misma corrección para el flujo admin
+        List<Huesped> huespedEntidades = new ArrayList<>();
+        for (HuespedDTO dto : req.getHuespedes()) {
+            huespedEntidades.add(buildHuesped(dto, r));
+        }
+        r.getHuespedes().addAll(huespedEntidades);
 
         Reserva saved = reservaRepo.save(r);
         hab.setEstado(Habitacion.HabitacionEstado.ocupada);
@@ -147,7 +155,7 @@ public class ReservaService {
         }
 
         Reserva saved = reservaRepo.save(reserva);
-        log.info("✏️ Reserva {} editada | {} → {} | ${}",
+        log.info("Reserva {} editada | {} → {} | ${}",
                 reserva.getCodigo(), req.getCheckIn(), req.getCheckOut(), tot[2]);
         return ReservaResponseDTO.from(saved);
     }
@@ -198,7 +206,7 @@ public class ReservaService {
         h.setEstado(Habitacion.HabitacionEstado.ocupada);
         habitacionRepo.save(h);
 
-        log.info(" Reserva {} CONFIRMADA | Hab {} → ocupada",
+        log.info("Reserva {} CONFIRMADA | Hab {} → ocupada",
                 reserva.getCodigo(), h.getNumero());
         return ReservaResponseDTO.from(reserva);
     }
