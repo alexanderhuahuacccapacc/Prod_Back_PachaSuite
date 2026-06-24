@@ -16,7 +16,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
-          time_zone: UTC
+          time_zone: America/Lima
   flyway:
     enabled: true
     baseline-on-migrate: true

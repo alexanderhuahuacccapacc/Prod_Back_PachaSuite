@@ -10,6 +10,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableAsync;
 
+import java.util.TimeZone;
+
 @SpringBootApplication
 @OpenAPIDefinition(
         info = @Info(
@@ -30,6 +32,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class PachaSuiteApplication {
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("America/Lima"));
         SpringApplication.run(PachaSuiteApplication.class, args);
     }
 }
