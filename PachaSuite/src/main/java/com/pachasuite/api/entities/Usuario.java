@@ -29,7 +29,7 @@ public class Usuario {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false, columnDefinition = "usuario_rol")
     @Builder.Default
-    private UsuarioRol rol = UsuarioRol.ROLE_CLIENT;
+    private UsuarioRol rol = UsuarioRol.ROLE_RECEPCIONISTA;
 
     @Column(nullable = false)
     @Builder.Default
@@ -44,6 +44,6 @@ public class Usuario {
     }
 
     public enum UsuarioRol {
-        ROLE_ADMIN, ROLE_CLIENT
+        ROLE_ADMIN, ROLE_RECEPCIONISTA
     }
 }

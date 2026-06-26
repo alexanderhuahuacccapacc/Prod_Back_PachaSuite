@@ -37,7 +37,7 @@ public class AuthService {
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .nombre(dto.getNombre())
-                .rol(Usuario.UsuarioRol.ROLE_CLIENT)
+                .rol(Usuario.UsuarioRol.ROLE_RECEPCIONISTA)
                 .activo(true)
                 .build();
 
