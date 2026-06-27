@@ -14,10 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,9 +39,11 @@ public class HabitacionService {
     public List<ActividadDTO> getActividadReciente() {
         int size = actividadLog.size();
         // Devuelve los últimos 20 en orden descendente (más reciente primero)
-        return new ArrayList<>(
+        List<ActividadDTO> ultimos = new ArrayList<>(
                 actividadLog.subList(Math.max(0, size - 20), size)
-        ).reversed();
+        );
+        Collections.reverse(ultimos);
+        return ultimos;
     }
 
     private void registrarActividad(String titulo, String subtitulo, String tipo) {
