@@ -1,5 +1,6 @@
 package com.pachasuite.api.service;
 
+import com.pachasuite.api.dto.ActividadDTO;
 import com.pachasuite.api.dto.HabitacionDTO;
 import com.pachasuite.api.dto.HabitacionUpdateDTO;
 import com.pachasuite.api.entities.Habitacion;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -27,9 +30,34 @@ public class HabitacionService {
 
     private final HabitacionRepository habitacionRepo;
 
+    // ── Actividad reciente en memoria (se resetea al reiniciar el servidor) ──
+    // En un sprint futuro esto puede moverse a una tabla `actividad_log` en BD.
+    private final List<ActividadDTO> actividadLog = new ArrayList<>();
+
+    // ─────────────────────────────────────────────
+    // ACTIVIDAD RECIENTE
+    // ─────────────────────────────────────────────
+
+    /// GET /api/admin/habitaciones/actividad — últimas 20 acciones
+    public List<ActividadDTO> getActividadReciente() {
+        int size = actividadLog.size();
+        // Devuelve los últimos 20 en orden descendente (más reciente primero)
+        return new ArrayList<>(
+                actividadLog.subList(Math.max(0, size - 20), size)
+        ).reversed();
+    }
+
+    private void registrarActividad(String titulo, String subtitulo, String tipo) {
+        actividadLog.add(new ActividadDTO(titulo, subtitulo, tipo, LocalDateTime.now()));
+        // Mantener máximo 100 entradas en memoria
+        if (actividadLog.size() > 100) actividadLog.remove(0);
+    }
+
+
 
     @Transactional(readOnly = true)
-    public List<HabitacionDTO> buscarDisponibles(LocalDate checkIn, LocalDate checkOut, int adultos, int ninos) {
+    public List<HabitacionDTO> buscarDisponibles(LocalDate checkIn, LocalDate checkOut,
+                                                 int adultos, int ninos) {
         if (!checkOut.isAfter(checkIn)) {
             throw new BadRequestException("La fecha de check-out debe ser posterior al check-in.");
         }
@@ -40,7 +68,6 @@ public class HabitacionService {
                 .map(HabitacionDTO::from)
                 .collect(Collectors.toList());
     }
-
 
     @Transactional(readOnly = true)
     public List<HabitacionDTO> findAll() {
@@ -64,6 +91,8 @@ public class HabitacionService {
 
         if (dto.getNombre() != null)     h.setNombre(dto.getNombre());
         if (dto.getPrecioBase() != null) h.setPrecioBase(dto.getPrecioBase());
+        if (dto.getCamas() != null)      h.setCamas(dto.getCamas());      // ← NUEVO
+        if (dto.getSizeM2() != null)     h.setSizeM2(dto.getSizeM2());    // ← NUEVO
 
         if (dto.getEstado() != null) {
             if (!ESTADOS_VALIDOS.contains(dto.getEstado())) {
@@ -78,6 +107,14 @@ public class HabitacionService {
 
         Habitacion saved = habitacionRepo.save(h);
         log.info("Habitación {} actualizada", id);
+
+        // Registrar en log de actividad
+        registrarActividad(
+                "Habitación actualizada",
+                saved.getNombre() + " · Nº " + saved.getNumero(),
+                "update"
+        );
+
         return HabitacionDTO.from(saved);
     }
 
@@ -89,9 +126,15 @@ public class HabitacionService {
         h.setAmenidades(amenidades);
         Habitacion saved = habitacionRepo.save(h);
         log.info("Amenidades de habitación {} actualizadas: {}", id, amenidades);
+
+        registrarActividad(
+                "Amenidades actualizadas",
+                saved.getNombre() + " · Nº " + saved.getNumero(),
+                "amenidades"
+        );
+
         return HabitacionDTO.from(saved);
     }
-
 
     @Transactional
     public void cambiarEstado(Long id, Habitacion.HabitacionEstado nuevoEstado) {
@@ -99,13 +142,20 @@ public class HabitacionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Habitacion", "id", id));
         h.setEstado(nuevoEstado);
         habitacionRepo.save(h);
+
+        registrarActividad(
+                "Estado cambiado a " + nuevoEstado.name(),
+                h.getNombre() + " · Nº " + h.getNumero(),
+                "estado"
+        );
     }
+
     @Transactional
     public String[] agregarImagen(Long id, String url) {
         Habitacion h = habitacionRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Habitacion", "id", id));
         String[] actuales = h.getImagenes() != null ? h.getImagenes() : new String[0];
-        String[] nuevas   = Arrays.copyOf(actuales, actuales.length + 1);
+        String[] nuevas = Arrays.copyOf(actuales, actuales.length + 1);
         nuevas[actuales.length] = url;
         h.setImagenes(nuevas);
         habitacionRepo.save(h);

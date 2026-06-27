@@ -19,4 +19,8 @@ public class HabitacionUpdateDTO {
     private String estado;
 
     private Map<String, Boolean> amenidades;
+
+    // ── Nuevos campos ──
+    private String camas;      // ej. "1 cama king", "2 camas twin"
+    private Integer sizeM2;    // ej. 30
 }
