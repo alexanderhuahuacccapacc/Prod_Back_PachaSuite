@@ -15,6 +15,8 @@ import java.util.Optional;
 @Repository
 public interface HabitacionRepository extends JpaRepository<Habitacion, Long> {
 
+    // ── NUEVO: usado por HabitacionService.create() para validar número duplicado ──
+    boolean existsByNumero(String numero);
 
     @Query("""
     SELECT h FROM Habitacion h

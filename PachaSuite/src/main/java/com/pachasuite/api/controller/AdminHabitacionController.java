@@ -1,6 +1,7 @@
 package com.pachasuite.api.controller;
 
 import com.pachasuite.api.dto.ActividadDTO;
+import com.pachasuite.api.dto.HabitacionCreateDTO;
 import com.pachasuite.api.dto.HabitacionDTO;
 import com.pachasuite.api.dto.HabitacionUpdateDTO;
 import com.pachasuite.api.service.HabitacionService;
@@ -17,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin/habitaciones")
+@RequestMapping("/api/admin")
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
 @RequiredArgsConstructor
 @Tag(name = "Admin – Habitaciones", description = "CRUD y amenidades (solo ROLE_ADMIN)")
@@ -30,6 +31,12 @@ public class AdminHabitacionController {
     @Operation(summary = "Listar todas las habitaciones")
     public ResponseEntity<List<HabitacionDTO>> findAll() {
         return ResponseEntity.ok(habitacionService.findAll());
+    }
+    @PostMapping
+    @Operation(summary = "Crear nueva habitación")
+    public ResponseEntity<HabitacionDTO> create(
+            @Valid @RequestBody HabitacionCreateDTO dto) {
+        return ResponseEntity.status(201).body(habitacionService.create(dto));
     }
 
     @GetMapping("/{id}")
@@ -60,5 +67,11 @@ public class AdminHabitacionController {
     @Operation(summary = "Feed de actividad reciente del dashboard")
     public ResponseEntity<List<ActividadDTO>> getActividad() {
         return ResponseEntity.ok(habitacionService.getActividadReciente());
+    }
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Eliminar habitación")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        habitacionService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

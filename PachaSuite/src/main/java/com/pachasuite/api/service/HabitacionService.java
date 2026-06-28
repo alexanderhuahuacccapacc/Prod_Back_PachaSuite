@@ -1,6 +1,7 @@
 package com.pachasuite.api.service;
 
 import com.pachasuite.api.dto.ActividadDTO;
+import com.pachasuite.api.dto.HabitacionCreateDTO;
 import com.pachasuite.api.dto.HabitacionDTO;
 import com.pachasuite.api.dto.HabitacionUpdateDTO;
 import com.pachasuite.api.entities.Habitacion;
@@ -171,5 +172,57 @@ public class HabitacionService {
         h.setImagenes(filtradas);
         habitacionRepo.save(h);
         return filtradas;
+    }
+    private static final List<String> TIPOS_VALIDOS =
+            Arrays.asList("simple", "doble", "matrimonial", "triple", "cuadruple");
+
+    @Transactional
+    public HabitacionDTO create(HabitacionCreateDTO dto) {
+
+        if (habitacionRepo.existsByNumero(dto.getNumero())) {
+            throw new BadRequestException("Ya existe una habitación con el número " + dto.getNumero());
+        }
+
+        if (!TIPOS_VALIDOS.contains(dto.getTipo())) {
+            throw new BadRequestException("Tipo inválido: " + dto.getTipo());
+        }
+
+        Habitacion h = new Habitacion();
+        h.setNumero(dto.getNumero());
+        h.setNombre(dto.getNombre());
+        h.setTipo(Habitacion.HabitacionTipo.valueOf(dto.getTipo()));   // ← FIX
+        h.setCapacidad(dto.getCapacidad());
+        h.setPrecioBase(dto.getPrecioBase());
+        h.setCamas(dto.getCamas());
+        h.setSizeM2(dto.getSizeM2());
+        h.setEstado(Habitacion.HabitacionEstado.libre);
+        h.setAmenidades(new HashMap<>());
+        h.setImagenes(new String[0]);
+
+        Habitacion saved = habitacionRepo.save(h);
+        log.info("Habitación creada: {} (Nº {})", saved.getNombre(), saved.getNumero());
+
+        registrarActividad(
+                "Habitación creada",
+                saved.getNombre() + " · Nº " + saved.getNumero(),
+                "create"
+        );
+
+        return HabitacionDTO.from(saved);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Habitacion h = habitacionRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Habitacion", "id", id));
+
+        habitacionRepo.delete(h);
+        log.info("Habitación {} eliminada", id);
+
+        registrarActividad(
+                "Habitación eliminada",
+                h.getNombre() + " · Nº " + h.getNumero(),
+                "delete"
+        );
     }
 }
