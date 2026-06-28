@@ -95,7 +95,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/reservas/*/enviar-pdf").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reservas/{codigo}").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/mensajes-contacto").permitAll()
-                        .requestMatchers("/api/mensajes-contacto/**").hasRole("ADMIN")
+                        .requestMatchers("/api/mensajes-contacto/**").hasAnyRole("ADMIN", "RECEPCIONISTA")
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
