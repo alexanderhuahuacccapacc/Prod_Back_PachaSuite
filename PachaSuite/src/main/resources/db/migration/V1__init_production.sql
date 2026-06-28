@@ -262,7 +262,7 @@ INSERT INTO habitaciones (numero, nombre, tipo, capacidad, precio_base, size_m2,
                                                                                                                                     ARRAY['https://czfxbrtdiiackpacflfm.supabase.co/storage/v1/object/public/rooms/404/cuadruple1-1.jpeg', 'https://czfxbrtdiiackpacflfm.supabase.co/storage/v1/object/public/rooms/404/cuadruple1-1bano.jpeg'], 14)
     ON CONFLICT (numero) DO NOTHING;
 
--- Usuario administrador (contraseña: admin123, debes generar el BCrypt real)
+-- administrador (contraseña: admin123, debes generar el BCrypt real)
 INSERT INTO usuarios (email, password, nombre, rol, activo) VALUES (
                                                                        'admin@pachasuite.com',
                                                                        'PLACEHOLDER',
