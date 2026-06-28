@@ -27,52 +27,54 @@ public class MensajeContactoController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCIONISTA')")
     public ResponseEntity<List<MensajeContactoResponse>> findAll() {
         return ResponseEntity.ok(service.listarTodos());
     }
 
     @GetMapping("/no-leidos")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCIONISTA')")
     public ResponseEntity<List<MensajeContactoResponse>> findNoLeidos() {
         return ResponseEntity.ok(service.listarNoLeidos());
     }
 
     @GetMapping("/no-leidos/count")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCIONISTA')")
     public ResponseEntity<Long> countNoLeidos() {
         return ResponseEntity.ok(service.contarNoLeidos());
     }
 
     @PatchMapping("/{id}/leido")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCIONISTA')")
     public ResponseEntity<MensajeContactoResponse> marcarLeido(@PathVariable Long id) {
         return ResponseEntity.ok(service.marcarLeido(id));
     }
 
     @PatchMapping("/marcar-todos-leidos")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCIONISTA')")
     public ResponseEntity<Void> marcarTodosLeidos() {
         service.marcarTodosLeidos();
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCIONISTA')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         service.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+
     @PostMapping("/{id}/responder")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCIONISTA')")
     public ResponseEntity<Void> responder(
             @PathVariable Long id,
             @RequestBody @Valid RespuestaRequest req) {
         service.responder(id, req.getCuerpo());
         return ResponseEntity.noContent().build();
     }
+
     @GetMapping("/respondidos")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCIONISTA')")
     public ResponseEntity<List<MensajeContactoResponse>> findRespondidos() {
         return ResponseEntity.ok(service.listarRespondidos());
     }
