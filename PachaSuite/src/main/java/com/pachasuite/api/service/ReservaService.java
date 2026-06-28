@@ -7,6 +7,7 @@ import com.pachasuite.api.exception.ResourceNotFoundException;
 import com.pachasuite.api.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
@@ -278,6 +279,16 @@ public class ReservaService {
             if (!reservaRepo.existsByCodigo(c)) return c;
         }
         throw new RuntimeException("No se pudo generar un código único de reserva.");
+    }
+    // Está en la versión 1, NO en la versión 2
+    @Transactional(readOnly = true)
+    public ReservaResponseDTO findByEmailTitular(String email) {
+        List<Reserva> reservas = reservaRepo.findByHuespedEmail(
+                email, PageRequest.of(0, 1));
+        if (reservas.isEmpty()) {
+            throw new ResourceNotFoundException("Reserva", "email", email);
+        }
+        return ReservaResponseDTO.from(reservas.get(0));
     }
 
     private Huesped buildHuesped(HuespedDTO dto, Reserva reserva) {

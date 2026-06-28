@@ -10,6 +10,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,6 +29,15 @@ public class ReservaController {
             @Valid @RequestBody ReservaRequestDTO dto) {
         ReservaResponseDTO response = reservaService.crearReserva(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/mi-reserva")
+    @Operation(summary = "Obtener la reserva del usuario autenticado",
+            description = "Busca por email del titular (huésped) asociado a la sesión")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<ReservaResponseDTO> findMiReserva(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(reservaService.findByEmailTitular(userDetails.getUsername()));
     }
 
     @GetMapping("/{codigo}")
