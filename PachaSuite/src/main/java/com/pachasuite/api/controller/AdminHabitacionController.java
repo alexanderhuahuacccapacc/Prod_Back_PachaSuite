@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/admin/habitaciones")
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
 @RequiredArgsConstructor
 @Tag(name = "Admin – Habitaciones", description = "CRUD y amenidades (solo ROLE_ADMIN)")
