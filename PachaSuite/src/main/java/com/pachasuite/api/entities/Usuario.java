@@ -35,6 +35,19 @@ public class Usuario {
     @Builder.Default
     private Boolean activo = true;
 
+    // ── Campos para cuentas temporales de huésped (ROLE_GUEST) ──
+    // Null para ADMIN/RECEPCIONISTA. Para GUEST, marca cuándo deja de poder loguearse
+    // (= checkOut de la reserva que originó la cuenta).
+    @Column(name = "expira_en")
+    private LocalDateTime expiraEn;
+
+    // Referencia a la reserva que generó esta cuenta guest. Permite limitar
+    // el acceso de /api/reservas/{codigo} a "solo SU propia reserva" sin tener
+    // que volver a buscarla por email cada vez.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reserva_id")
+    private Reserva reserva;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -43,7 +56,17 @@ public class Usuario {
         createdAt = LocalDateTime.now();
     }
 
+    /**
+     * true si esta cuenta es de tipo huésped temporal.
+     * Lo usamos en UserDetailsServiceImpl para activar la lógica de expiración
+     * y en el controller de reservas/cochera para validar pertenencia.
+     */
+    @Transient
+    public boolean esGuest() {
+        return this.rol == UsuarioRol.ROLE_GUEST;
+    }
+
     public enum UsuarioRol {
-        ROLE_ADMIN, ROLE_RECEPCIONISTA
+        ROLE_ADMIN, ROLE_RECEPCIONISTA, ROLE_GUEST
     }
 }

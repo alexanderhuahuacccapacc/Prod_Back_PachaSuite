@@ -143,4 +143,48 @@ public class EmailService {
             throw new RuntimeException("Error enviando PDF", e);
         }
     }
+
+    /**
+     * Envía las credenciales de acceso temporal al portal de huésped.
+     * Se dispara cuando una reserva pasa a estado "confirmada"
+     * (ver GuestCreationService). La password se manda en texto plano
+     * SOLO por este correo; nunca se devuelve en ninguna respuesta de la API.
+     */
+    public boolean enviarCredencialesGuest(String destinatario, String nombre,
+                                           String passwordPlano, String codigoReserva,
+                                           java.time.LocalDate checkOut) {
+        try {
+            MimeMessage mail = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mail, true, "UTF-8");
+
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(destinatario);
+            helper.setSubject("🔑 Acceso a tu reserva " + codigoReserva + " - Pacha Suite");
+
+            String html = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:auto'>"
+                    + "<h2 style='background:#3B1F0E;color:#E8A265;padding:20px;margin:0'>Pacha Suite – Acceso de huésped</h2>"
+                    + "<div style='padding:24px;border:1px solid #ddd'>"
+                    + "<p>Hola <b>" + StringEscapeUtils.escapeHtml4(nombre != null && !nombre.isEmpty() ? nombre : "huésped") + "</b>,</p>"
+                    + "<p>Tu reserva <b>" + StringEscapeUtils.escapeHtml4(codigoReserva) + "</b> ha sido confirmada. "
+                    + "Hemos creado un acceso temporal para que puedas ver tu reserva y registrar tu vehículo en cochera.</p>"
+                    + "<p><b>Usuario:</b> " + StringEscapeUtils.escapeHtml4(destinatario) + "</p>"
+                    + "<p><b>Contraseña:</b> "
+                    + "<span style='letter-spacing:2px;font-size:18px;color:#3B1F0E'>"
+                    + StringEscapeUtils.escapeHtml4(passwordPlano) + "</span></p>"
+                    + "<p style='color:#999;font-size:13px'>Este acceso es válido únicamente hasta el "
+                    + checkOut + " (fecha de check-out). Después de esa fecha la cuenta se elimina automáticamente.</p>"
+                    + "</div>"
+                    + "<p style='text-align:center;font-size:12px;color:#999'>Pacha Suite · Puno, Perú</p>"
+                    + "</div>";
+
+            helper.setText(html, true);
+            mailSender.send(mail);
+            log.info("Credenciales de guest enviadas a {} (reserva {})", destinatario, codigoReserva);
+            return true;
+
+        } catch (MessagingException | MailException | java.io.UnsupportedEncodingException e) {
+            log.error("Error enviando credenciales de guest a {}: {}", destinatario, e.getMessage());
+            return false;
+        }
+    }
 }

@@ -97,6 +97,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/mensajes-contacto").permitAll()
                         .requestMatchers("/api/mensajes-contacto/**").hasAnyRole("ADMIN", "RECEPCIONISTA")
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+
+                        // ── Cuenta temporal de huésped: SOLO estas dos rutas ──
+                        // Nota: /api/reservas/{codigo} GET ya está permitAll() arriba (pública,
+                        // para que cualquiera consulte con el código). El control de "solo SU
+                        // reserva" para el guest se hace dentro del controller/service
+                        // (comparando contra usuario.getReserva()), no aquí en SecurityConfig,
+                        // porque Spring Security no puede validar pertenencia por path variable.
+                        .requestMatchers(HttpMethod.GET, "/api/reservas/mi-reserva").hasAuthority("ROLE_GUEST")
+
+                        // Cochera para staff: rutas reales bajo /api/cochera/ (sin /guest/).
+                        // El guest NO debe entrar aquí — solo ADMIN/RECEPCIONISTA.
+                        .requestMatchers("/api/cochera/guest/**").hasAuthority("ROLE_GUEST")
+                        .requestMatchers("/api/cochera/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_RECEPCIONISTA")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)

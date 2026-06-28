@@ -31,6 +31,7 @@ public class ReservaService {
     private final HabitacionRepository habitacionRepo;
     private final ExtraRepository      extraRepo;
     private final CodigoService        codigoService;
+    private final GuestCreationService guestCreationService;
     private final SecureRandom         secureRandom = new SecureRandom();
 
     @Transactional
@@ -119,6 +120,20 @@ public class ReservaService {
         hab.setEstado(Habitacion.HabitacionEstado.ocupada);
         habitacionRepo.save(hab);
         log.info("Reserva ADMIN: {} | Hab {} | ${}", codigo, hab.getNumero(), tot[2]);
+
+        // Esta reserva nace YA confirmada (no pasa por confirmar()), así que el
+        // hook de creación de guest se dispara aquí directamente.
+        Huesped titularAdmin = saved.getHuespedes().stream()
+                .filter(hu -> hu.getTipo() == Huesped.HuespedTipo.titular)
+                .findFirst()
+                .orElse(saved.getHuespedes().isEmpty() ? null : saved.getHuespedes().get(0));
+
+        if (titularAdmin != null && titularAdmin.getEmail() != null && !titularAdmin.getEmail().isBlank()) {
+            String nombreCompleto = (titularAdmin.getNombre() != null ? titularAdmin.getNombre() : "")
+                    + (titularAdmin.getApellido() != null ? " " + titularAdmin.getApellido() : "");
+            guestCreationService.crearOActualizarGuest(saved, titularAdmin.getEmail(), nombreCompleto.trim());
+        }
+
         return ReservaResponseDTO.from(saved);
     }
 
@@ -206,6 +221,25 @@ public class ReservaService {
                         "Habitacion", "id", reserva.getHabitacion().getId()));
         h.setEstado(Habitacion.HabitacionEstado.ocupada);
         habitacionRepo.save(h);
+
+        // Crear/actualizar cuenta temporal de huésped (ROLE_GUEST).
+        // El "titular" es el primer Huesped con tipo = titular; si por alguna
+        // razón no hay marcado ninguno como titular, se usa el primero de la lista.
+        // OJO: si tu lógica de negocio define "titular" de otra forma, ajusta este
+        // bloque — es el único punto donde se decide QUIÉN recibe el acceso.
+        Huesped titular = reserva.getHuespedes().stream()
+                .filter(hu -> hu.getTipo() == Huesped.HuespedTipo.titular)
+                .findFirst()
+                .orElse(reserva.getHuespedes().isEmpty() ? null : reserva.getHuespedes().get(0));
+
+        if (titular != null && titular.getEmail() != null && !titular.getEmail().isBlank()) {
+            String nombreCompleto = (titular.getNombre() != null ? titular.getNombre() : "")
+                    + (titular.getApellido() != null ? " " + titular.getApellido() : "");
+            guestCreationService.crearOActualizarGuest(reserva, titular.getEmail(), nombreCompleto.trim());
+        } else {
+            log.warn("Reserva {} confirmada sin email de titular identificable; no se crea cuenta guest.",
+                    reserva.getCodigo());
+        }
 
         log.info("Reserva {} CONFIRMADA | Hab {} → ocupada",
                 reserva.getCodigo(), h.getNumero());

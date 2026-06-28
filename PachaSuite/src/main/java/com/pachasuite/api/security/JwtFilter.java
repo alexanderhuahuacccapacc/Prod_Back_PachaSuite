@@ -70,6 +70,20 @@ public class JwtFilter extends OncePerRequestFilter {
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
+                    // Guests con cuenta vencida (checkOut ya pasó) quedan bloqueados
+                    // aquí mismo, sin esperar al scheduler de limpieza.
+                    if (!userDetails.isAccountNonExpired()) {
+                        log.warn("Cuenta expirada intentando autenticarse: {}", email);
+                        sendErrorResponse(response, 401,
+                                "Tu acceso temporal ha expirado", "ACCOUNT_EXPIRED");
+                        return;
+                    }
+                    if (!userDetails.isEnabled()) {
+                        log.warn("Cuenta inactiva intentando autenticarse: {}", email);
+                        sendErrorResponse(response, 401, "Cuenta inactiva", "ACCOUNT_DISABLED");
+                        return;
+                    }
+
                     if (jwtProvider.isTokenValid(token, userDetails)) {
                         UsernamePasswordAuthenticationToken auth =
                                 new UsernamePasswordAuthenticationToken(

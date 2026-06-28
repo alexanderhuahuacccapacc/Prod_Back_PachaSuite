@@ -187,4 +187,125 @@ public class CocheraService {
                 registro.getVehiculo().getPlaca(), espacio.getCodigo(), usuario.getNombre());
         return RegistroCocheraDTO.from(saved);
     }
+
+    // ════════════════════════════════════════════════════════════
+    // ── Flujo GUEST (huésped con cuenta temporal) ──
+    // Reglas de seguridad: reservaId SIEMPRE viene del usuario autenticado
+    // (su token), NUNCA del body/request. Cada método valida pertenencia
+    // antes de leer o modificar cualquier registro.
+    // ════════════════════════════════════════════════════════════
+
+    /**
+     * Registra el ingreso del vehículo del huésped, forzando reservaId
+     * al de su propia reserva (ignora cualquier reservaId que el cliente
+     * intente mandar en el body — por eso NO reusa IngresoCocheraRequest.getReservaId()).
+     */
+    @Transactional
+    public RegistroCocheraDTO registrarIngresoGuest(IngresoCocheraRequest request,
+                                                    String emailUsuario,
+                                                    Long reservaId) {
+        Usuario usuario = usuarioRepo.findByEmail(emailUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "email", emailUsuario));
+
+        Reserva reserva = reservaRepo.findById(reservaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva", "id", reservaId));
+
+        Vehiculo vehiculo = vehiculoRepo.findByPlaca(request.getPlaca().toUpperCase())
+                .orElseGet(() -> {
+                    Vehiculo nuevo = Vehiculo.builder()
+                            .placa(request.getPlaca().toUpperCase())
+                            .marca(request.getMarca())
+                            .modelo(request.getModelo())
+                            .color(request.getColor())
+                            .tipo(request.getTipo() != null
+                                    ? Vehiculo.VehiculoTipo.valueOf(request.getTipo())
+                                    : Vehiculo.VehiculoTipo.AUTO)
+                            .build();
+                    return vehiculoRepo.save(nuevo);
+                });
+
+        EspacioCochera espacio = espacioRepo.findById(request.getEspacioId())
+                .orElseThrow(() -> new ResourceNotFoundException("Espacio de cochera", "id", request.getEspacioId()));
+
+        if (espacio.getEstado() == EspacioCochera.EspacioEstado.OCUPADO) {
+            throw new BadRequestException("El espacio " + espacio.getCodigo() + " ya está ocupado");
+        }
+
+        espacio.setEstado(EspacioCochera.EspacioEstado.OCUPADO);
+        espacioRepo.save(espacio);
+
+        RegistroCochera registro = RegistroCochera.builder()
+                .vehiculo(vehiculo)
+                .espacio(espacio)
+                .usuario(usuario)
+                .reserva(reserva) // ← forzado, no viene del request
+                .fechaIngreso(LocalDateTime.now())
+                .observacion(request.getObservacion())
+                .build();
+
+        RegistroCochera saved = registroRepo.save(registro);
+        log.info("[GUEST] Ingreso de vehículo {} al espacio {} | reserva {}",
+                vehiculo.getPlaca(), espacio.getCodigo(), reserva.getCodigo());
+        return RegistroCocheraDTO.from(saved);
+    }
+
+    /**
+     * Lista solo los registros de cochera de LA reserva del huésped autenticado.
+     */
+    @Transactional(readOnly = true)
+    public List<RegistroCocheraDTO> listarMisRegistros(Long reservaId) {
+        return registroRepo.findByReservaId(reservaId)
+                .stream()
+                .map(RegistroCocheraDTO::from)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Salida de vehículo, pero SOLO si el registro pertenece a la reserva
+     * del huésped. Si no, 404 (no revelamos que el id existe pero es de otra reserva).
+     */
+    @Transactional
+    public RegistroCocheraDTO registrarSalidaGuest(Long id, SalidaCocheraRequest request,
+                                                   String emailUsuario, Long reservaId) {
+        Usuario usuario = usuarioRepo.findByEmail(emailUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "email", emailUsuario));
+
+        RegistroCochera registro = registroRepo.findByIdAndReservaId(id, reservaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registro de cochera", "id", id));
+
+        if (registro.getFechaSalida() != null) {
+            throw new BadRequestException("El vehículo ya registró su salida");
+        }
+
+        registro.setFechaSalida(LocalDateTime.now());
+
+        if (request != null && request.getObservacion() != null) {
+            registro.setObservacion(registro.getObservacion() != null
+                    ? registro.getObservacion() + " | Salida: " + request.getObservacion()
+                    : "Salida: " + request.getObservacion());
+        }
+
+        EspacioCochera espacio = registro.getEspacio();
+        espacio.setEstado(EspacioCochera.EspacioEstado.LIBRE);
+        espacioRepo.save(espacio);
+
+        RegistroCochera saved = registroRepo.save(registro);
+        log.info("[GUEST] Salida de vehículo {} del espacio {} (reserva {})",
+                registro.getVehiculo().getPlaca(), espacio.getCodigo(), reservaId);
+        return RegistroCocheraDTO.from(saved);
+    }
+
+    /**
+     * Espacios libres para que el guest elija dónde estacionar.
+     * Reusa listarEspacios() — esto es información neutral, no hay datos
+     * de otros huéspedes que proteger.
+     */
+    @Transactional(readOnly = true)
+    public List<EspacioCocheraDTO> listarEspaciosDisponiblesGuest() {
+        return espacioRepo.findAll()
+                .stream()
+                .filter(e -> e.getEstado() == EspacioCochera.EspacioEstado.LIBRE)
+                .map(EspacioCocheraDTO::from)
+                .collect(Collectors.toList());
+    }
 }

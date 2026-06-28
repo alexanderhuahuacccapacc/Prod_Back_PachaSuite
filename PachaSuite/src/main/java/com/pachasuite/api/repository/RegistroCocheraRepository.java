@@ -19,4 +19,13 @@ public interface RegistroCocheraRepository extends JpaRepository<RegistroCochera
     List<RegistroCochera> findByVehiculoIdOrderByFechaIngresoDesc(Long vehiculoId);
 
     List<RegistroCochera> findByEspacioIdAndFechaSalidaIsNull(Long espacioId);
+
+    // ── Para el guest: SIEMPRE filtrado por su propia reserva ──
+    @Query("SELECT r FROM RegistroCochera r WHERE r.reserva.id = :reservaId ORDER BY r.fechaIngreso DESC")
+    List<RegistroCochera> findByReservaId(@org.springframework.data.repository.query.Param("reservaId") Long reservaId);
+
+    @Query("SELECT r FROM RegistroCochera r WHERE r.id = :id AND r.reserva.id = :reservaId")
+    java.util.Optional<RegistroCochera> findByIdAndReservaId(
+            @org.springframework.data.repository.query.Param("id") Long id,
+            @org.springframework.data.repository.query.Param("reservaId") Long reservaId);
 }
