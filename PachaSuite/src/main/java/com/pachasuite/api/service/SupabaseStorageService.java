@@ -7,6 +7,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -84,9 +85,18 @@ public class SupabaseStorageService {
         headers.set("Authorization", "Bearer " + serviceKey);
 
         RestTemplate rt = buildClient();
-        rt.exchange(deleteUrl, HttpMethod.DELETE,
-                new HttpEntity<>(headers), String.class);
-
-        log.info("Imagen eliminada de Supabase: {}", path);
+        try {
+            rt.exchange(deleteUrl, HttpMethod.DELETE,
+                    new HttpEntity<>(headers), String.class);
+            log.info("Imagen eliminada de Supabase: {}", path);
+        } catch (HttpClientErrorException e) {
+            // Supabase devuelve 400 BadRequest con body {"statusCode":"404","error":"not_found",...}
+            // cuando el objeto no existe — no es un 404 HTTP real, así que hay que mirar el body.
+            if (e.getStatusCode().value() == 400 && e.getResponseBodyAsString().contains("not_found")) {
+                log.warn("Imagen no encontrada en Supabase al intentar eliminar (se ignora): {}", path);
+            } else {
+                throw e;
+            }
+        }
     }
 }
